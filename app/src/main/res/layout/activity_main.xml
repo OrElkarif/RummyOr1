@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/img_1"
+    tools:context=".GameActivity">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:src="@drawable/img"
+        android:layout_gravity="top"
+
+
+        ></ImageView>
+
+    <Button
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:text="Start Game"
+        android:backgroundTint="#FD0000"
+        android:id="@+id/btnStartGame"
+        android:layout_gravity="center"
+        android:textSize="30dp"></Button>
+
+    <Button
+        android:id="@+id/btnSetting"
+        android:layout_width="300dp"
+        android:backgroundTint="#FD0000"
+        android:layout_height="wrap_content"
+        android:text="Setting"
+        android:layout_gravity="center"
+        android:textSize="30dp"></Button>
+
+    <Button
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#FD0000"
+        android:text="Instruction"
+        android:layout_gravity="center"
+        android:id="@+id/btnInstruction"
+        android:textSize="30dp"></Button>
+    <Button
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#FD0000"
+        android:text="Achievements"
+        android:layout_gravity="center"
+        android:id="@+id/btnAchievements"
+        android:textSize="30dp"></Button>
+
+
+
+</LinearLayout>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/gameLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#f2f2f2">
+
+    <!-- הצגת התור הנוכחי -->
+    <TextView
+        android:id="@+id/txtTurn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Player 1's Turn"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_gravity="center"
+        android:layout_marginBottom="10dp"/>
+
+    <!-- הצגת מספר הקלפים של היריב -->
+    <TextView
+        android:id="@+id/tvAgainst"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="קלפים של היריב: 0"
+        android:textSize="18sp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="10dp"/>
+
+    <!-- הצגת מספר הרביעיות שהושלמו -->
+    <TextView
+        android:id="@+id/txtCompletedSets"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="רביעיות שהושלמו: 0"
+        android:textSize="18sp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="20dp"/>
+
+    <!-- הלוח של המשחק -->
+    <LinearLayout
+        android:id="@+id/ll"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:background="#ffffff">
+    </LinearLayout>
+
+</LinearLayout>

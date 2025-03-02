@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/achivements"
+    android:orientation="vertical"
+    tools:context=".AchievementsActivity">
+
+    
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Satistics:"
+        android:textSize="70dp">
+    </TextView>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Amount of Rummies completed"
+        android:textSize="50dp"></TextView>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Amount of turns:"
+        android:textSize="50dp"></TextView>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Score:"
+        android:textSize="50dp"></TextView>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Play Again?"
+        android:layout_marginTop="100dp"
+        android:textSize="90dp"></TextView>
+
+
+    <RadioGroup
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="left"
+        android:layoutDirection="ltr"
+        android:layout_marginTop="50dp"
+        >
+    <RadioButton
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:text="Yes"
+        android:textSize="70dp"
+        android:id="@+id/radioButtonYes"
+        android:textColor="@color/black"
+        android:checked="true"></RadioButton>
+
+        <RadioButton
+            android:id="@+id/radioButtonNo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No"
+            android:textColor="@color/black"
+            android:textSize="70dp"></RadioButton>
+
+    </RadioGroup>
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Press"
+        android:textSize="80dp"
+        android:backgroundTint="#DFD620"></Button>
+
+</LinearLayout>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/setting"
+    android:orientation="vertical"
+    tools:context=".SettingActivity">
+
+
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@android:color/holo_blue_dark"
+        android:textSize="20dp"
+        android:text="select gamemode: "></TextView>
+    <Spinner
+        android:id="@+id/spinnerGM"
+        android:layout_width="300dp"
+        android:layout_height="100dp"></Spinner>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@android:color/holo_blue_dark"
+        android:textSize="20dp"
+        android:text="select Background Color"
+        ></TextView>
+    <Spinner
+        android:id="@+id/spinnerBG"
+        android:layout_width="300dp"
+        android:layout_height="100dp"></Spinner>
+
+    <TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+        android:textColor="@android:color/holo_blue_dark"
+        android:textSize="20dp"
+        android:text="select Amount of Players"
+    ></TextView>
+    <Spinner
+        android:id="@+id/spinnerPlayers"
+        android:layout_width="300dp"
+        android:layout_height="100dp"></Spinner>
+
+
+
+</LinearLayout>

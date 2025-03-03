@@ -85,11 +85,12 @@ public class BoardGame extends View {
 
                 // Check if any card was touched (adjusting for scroll)
                 for (Card card : myCards) {
-                    if (card.isUserTouchMe((int) touchX + scrollOffset, (int) touchY)) {
+                    if (card.isUserTouchMe((int) (touchX - scrollOffset), (int) touchY)) {
                         handleCardTouch(card);
                         return true;
                     }
                 }
+
             }
         }
         return super.onTouchEvent(event);

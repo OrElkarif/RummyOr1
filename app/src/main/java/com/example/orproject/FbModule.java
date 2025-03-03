@@ -151,8 +151,19 @@ public class FbModule {
 
     // הוספת קלף לשחקן
     public void moveCardToPlayer(String player, Card card) {
-        gameStateRef.child(player + "Cards").push().setValue(new CardData(card.getCatagory(), card.getCardName(), card.getId()));
+        gameStateRef.child(player + "Cards").get().addOnSuccessListener(snapshot -> {
+            ArrayList<Card> cards = new ArrayList<>();
+            for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
+                CardData cardData = cardSnapshot.getValue(CardData.class);
+                if (cardData != null) {
+                    cards.add(new Card(cardData.category, cardData.name, cardData.id));
+                }
+            }
+            cards.add(card); // מוסיפים את הקלף החדש
+            gameStateRef.child(player + "Cards").setValue(serializeCards(cards)); // מעדכנים ב-Firebase
+        });
     }
+
 
     // מחיקת כל הנתונים במשחק (למשחק חדש)
     public void resetGame() {

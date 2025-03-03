@@ -7,22 +7,18 @@ import android.graphics.Paint;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Button;
-import android.widget.HorizontalScrollView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
-import androidx.annotation.NonNull;
+
 import java.util.ArrayList;
 
 public class BoardGame extends View {
     private boolean isPlayer1;
     private ArrayList<Card> myCards = new ArrayList<>();
     private ArrayList<Card> opponentCards = new ArrayList<>();
-    private ArrayList<Card> player1Cards = new ArrayList<>();
-    private ArrayList<Card> player2Cards = new ArrayList<>();
     private Packet packet = new Packet();
     private boolean isMyTurn = false;
+    private ArrayList<Card> player1Cards;
+    private ArrayList<Card> player2Cards;
 
     private int myScore = 0;
     private int opponentScore = 0;
@@ -45,6 +41,8 @@ public class BoardGame extends View {
     public BoardGame(Context context, boolean isPlayer1) {
         super(context);
         this.isPlayer1 = isPlayer1;
+        player1Cards = new ArrayList<>();
+        player2Cards = new ArrayList<>();
         this.fbModule = new FbModule(null);
 
         backgroundPaint = new Paint();
@@ -131,8 +129,8 @@ public class BoardGame extends View {
                 fbModule.updatePacket(packet.getAllCards());
 
                 // Check for Rummy before switching turns
-                if (RummyCheck(myCards)) {
-                    RummyClearFromCanvas(myCards);
+                if (checkForQuartet(myCards)) {
+                    removeQuartetFromHand(myCards);
                 } else {
                     // Switch turn after drawing a card
                     fbModule.switchTurn();
@@ -148,26 +146,25 @@ public class BoardGame extends View {
     }
 
     private void handleCardTouch(Card card) {
+        // Remove card from current player's hand
         myCards.remove(card);
-        opponentCards.add(card);
 
-        // Update Firebase with new hands
+        // Update current player's cards in Firebase
         if (isPlayer1) {
             fbModule.updatePlayer1Cards(myCards);
-            fbModule.updatePlayer2Cards(opponentCards);
+            // Add card to opponent's hand
+            fbModule.moveCardToPlayer("player2", card);
         } else {
             fbModule.updatePlayer2Cards(myCards);
-            fbModule.updatePlayer1Cards(opponentCards);
+            // Add card to opponent's hand
+            fbModule.moveCardToPlayer("player1", card);
         }
 
-        // Update turn
+        // Switch turn
         fbModule.switchTurn();
 
-        // Redraw screen
+        // Refresh screen
         invalidate();
-
-        // Check for end game condition
-        checkEndGame();
     }
 
     private void initializeGame() {
@@ -347,15 +344,33 @@ public class BoardGame extends View {
                 50, 100, textPaint);
     }
 
-    public void updatePlayerCards(ArrayList<Card> cards) {
-        if ((isPlayer1 && cards == player1Cards) || (!isPlayer1 && cards == player2Cards)) {
-            myCards = new ArrayList<>(cards);
+    public void updatePlayerCards(ArrayList<Card> cards, boolean isPlayer1Update) {
+        if (isPlayer1Update) {
+            player1Cards = new ArrayList<>(cards);
+            if (isPlayer1) {
+                myCards.clear();
+                myCards.addAll(player1Cards);
+            } else {
+                opponentCards.clear();
+                opponentCards.addAll(player1Cards);
+            }
         } else {
-            opponentCards = new ArrayList<>(cards);
+            player2Cards = new ArrayList<>(cards);
+            if (!isPlayer1) {
+                myCards.clear();
+                myCards.addAll(player2Cards);
+            } else {
+                opponentCards.clear();
+                opponentCards.addAll(player2Cards);
+            }
         }
+
         updateOpponentCardCount();
         invalidate();
     }
+
+
+
 
     private void updateOpponentCardCount() {
         if (tvOpponentCards != null) {
@@ -374,73 +389,94 @@ public class BoardGame extends View {
         invalidate();
     }
 
-    public boolean RummyCheck(ArrayList<Card> cards) {
+    /**
+     * Check if the player has a quartet (4 cards of the same category)
+     */
+    public boolean checkForQuartet(ArrayList<Card> cards) {
         if (cards.size() < 4) {
             return false;
         }
 
-        for (int i = 0; i < cards.size(); i++) {
-            int count = 1;
-            String currentCategory = cards.get(i).getCatagory();
-            ArrayList<Card> matchingCards = new ArrayList<>();
-            matchingCards.add(cards.get(i));
+        // Count cards by category
+        java.util.HashMap<String, Integer> categoryCount = new java.util.HashMap<>();
+        for (Card card : cards) {
+            String category = card.getCatagory();
+            categoryCount.put(category, categoryCount.getOrDefault(category, 0) + 1);
+        }
 
-            for (int j = 0; j < cards.size(); j++) {
-                if (i != j && cards.get(j).getCatagory().equals(currentCategory)) {
-                    count++;
-                    matchingCards.add(cards.get(j));
-                }
-            }
-
+        // Check if any category has 4 or more cards
+        for (Integer count : categoryCount.values()) {
             if (count >= 4) {
                 return true;
             }
         }
+
         return false;
     }
 
-    public void RummyClearFromCanvas(ArrayList<Card> cards) {
-        if (!RummyCheck(cards)) {
+    /**
+     * Remove a quartet from the player's hand and update score
+     */
+    public void removeQuartetFromHand(ArrayList<Card> cards) {
+        if (!checkForQuartet(cards)) {
             return;
         }
 
-        for (int i = 0; i < cards.size(); i++) {
-            int count = 1;
-            String currentCategory = cards.get(i).getCatagory();
+        // Find the first category with 4 or more cards
+        java.util.HashMap<String, Integer> categoryCount = new java.util.HashMap<>();
+        for (Card card : cards) {
+            String category = card.getCatagory();
+            categoryCount.put(category, categoryCount.getOrDefault(category, 0) + 1);
+        }
+
+        String quartetCategory = null;
+        for (String category : categoryCount.keySet()) {
+            if (categoryCount.get(category) >= 4) {
+                quartetCategory = category;
+                break;
+            }
+        }
+
+        if (quartetCategory != null) {
+            // Find and remove exactly 4 cards of the quartet category
             ArrayList<Card> cardsToRemove = new ArrayList<>();
-            cardsToRemove.add(cards.get(i));
+            int count = 0;
 
-            for (int j = 0; j < cards.size(); j++) {
-                if (i != j && cards.get(j).getCatagory().equals(currentCategory)) {
+            for (Card card : cards) {
+                if (card.getCatagory().equals(quartetCategory) && count < 4) {
+                    cardsToRemove.add(card);
                     count++;
-                    cardsToRemove.add(cards.get(j));
-                    if (count == 4) break; // Just take 4 cards for a quartet
+                }
+
+                if (count == 4) {
+                    break;
                 }
             }
 
-            if (count == 4) {
-                // Found a quartet, remove cards and update score
-                cards.removeAll(cardsToRemove);
+            // Remove the cards
+            cards.removeAll(cardsToRemove);
 
-                // Update score
-                if (isPlayer1) {
-                    myScore += 40;
-                    fbModule.updatePlayerScore("player1", myScore);
-                    fbModule.updatePlayer1Cards(cards);
-                } else {
-                    myScore += 40;
-                    fbModule.updatePlayerScore("player2", myScore);
-                    fbModule.updatePlayer2Cards(cards);
-                }
+            // Update score
+            myScore += 40;
 
-                // Return after processing one quartet
-                if (cards.isEmpty() || cards.size() < 4) {
-                    checkEndGame();
-                }
-
-                invalidate();
-                return;
+            // Update Firebase
+            if (isPlayer1) {
+                fbModule.updatePlayerScore("player1", myScore);
+                fbModule.updatePlayer1Cards(cards);
+            } else {
+                fbModule.updatePlayerScore("player2", myScore);
+                fbModule.updatePlayer2Cards(cards);
             }
+
+            // Check for end game or another quartet
+            if (cards.isEmpty() || cards.size() < 4) {
+                checkEndGame();
+            } else if (checkForQuartet(cards)) {
+                // Handle another quartet if present
+                removeQuartetFromHand(cards);
+            }
+
+            invalidate();
         }
     }
 

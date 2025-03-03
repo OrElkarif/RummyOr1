@@ -22,13 +22,14 @@ public class Player2Activity extends AppCompatActivity {
         fbModule = new FbModule(new FbModule.GameStateListener() {
             @Override
             public void onPlayer1CardsChanged(ArrayList<Card> cards) {
-                boardGame.updatePlayerCards(cards);
+                boardGame.updatePlayerCards(cards, true);
             }
 
             @Override
             public void onPlayer2CardsChanged(ArrayList<Card> cards) {
-                boardGame.updatePlayerCards(cards);
+                boardGame.updatePlayerCards(cards, false);
             }
+
 
             @Override
             public void onPacketChanged(ArrayList<Card> cards) {

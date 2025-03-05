@@ -7,55 +7,74 @@ import android.graphics.Paint;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
+import android.widget.HorizontalScrollView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
-
+import android.widget.Toast;
+import androidx.annotation.NonNull;
 import java.util.ArrayList;
 
 public class BoardGame extends View {
-    private boolean isPlayer1;
-    private ArrayList<Card> myCards = new ArrayList<>();
-    private ArrayList<Card> opponentCards = new ArrayList<>();
-    private Packet packet = new Packet();
-    private boolean isMyTurn = false;
-    private ArrayList<Card> player1Cards;
-    private ArrayList<Card> player2Cards;
+    // משתני מצב המשחק
+    private boolean isPlayer1; // סימון השחקן הנוכחי (שחקן 1 או 2)
+    private ArrayList<Card> myCards = new ArrayList<>(); // קלפים של השחקן הנוכחי
+    private ArrayList<Card> opponentCards = new ArrayList<>(); // קלפים של היריב
+    private ArrayList<Card> player1Cards = new ArrayList<>(); // קלפי שחקן 1
+    private ArrayList<Card> player2Cards = new ArrayList<>(); // קלפי שחקן 2
+    private Packet packet = new Packet(); // קופת הקלפים
+    private boolean isMyTurn = false; // האם זה תור השחקן הנוכחי
 
-    private int myScore = 0;
-    private int opponentScore = 0;
-    private TextView tvOpponentCards;
-    private Paint backgroundPaint;
-    private Card[] ListOfCards = new Card[36];
-    private Deck deck;
-    private FbModule fbModule;
+    // משתני ניקוד וממשק
+    private int myScore = 0; // ניקוד השחקן הנוכחי
+    private int opponentScore = 0; // ניקוד היריב
+    private TextView tvOpponentCards; // טקסט View להצגת מספר קלפי היריב
+    private Paint backgroundPaint; // צבע רקע הלוח
+    private Card[] ListOfCards = new Card[36]; // מערך כל הקלפים
+    private Deck deck; // חפיסת הקלפים
+    private FbModule fbModule; // מודול Firebase לניהול המשחק
+
+    // קבועים למיקום וגודל הקופה
     private static final int PACKET_X = 0;
     private static final int PACKET_Y = 0;
     private static final int PACKET_WIDTH = 260;
     private static final int PACKET_HEIGHT = 400;
 
+    // משתני גלילה עבור הקלפים
     private int scrollOffset = 0;
     private boolean canScrollLeft = false;
     private boolean canScrollRight = false;
     private static final int SCROLL_BUTTON_WIDTH = 100;
     private static final int SCROLL_BUTTON_HEIGHT = 100;
 
+    // מיקום כפתור "I don't have"
+    private Button btnIDontHave;
+    private int iDontHaveButtonX;
+    private int iDontHaveButtonY;
+    private int iDontHaveButtonWidth = 250;
+    private int iDontHaveButtonHeight = 100;
+
+    // בנאי המחלקה - מאתחל את לוח המשחק
     public BoardGame(Context context, boolean isPlayer1) {
         super(context);
         this.isPlayer1 = isPlayer1;
-        player1Cards = new ArrayList<>();
-        player2Cards = new ArrayList<>();
         this.fbModule = new FbModule(null);
 
+        // הגדרת רקע כחול בהיר
         backgroundPaint = new Paint();
         backgroundPaint.setColor(Color.parseColor("#D6EAF8"));
         backgroundPaint.setStyle(Paint.Style.FILL);
 
+        // חיבור ל-TextView של קלפי היריב
         if (context instanceof GameActivity) {
             tvOpponentCards = ((GameActivity) context).findViewById(R.id.tvAgainst);
             updateOpponentCardCount();
         }
 
+        // אתחול המשחק
         initializeGame();
     }
+
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -63,7 +82,13 @@ public class BoardGame extends View {
             float touchX = event.getX();
             float touchY = event.getY();
 
-            // Check if scroll buttons were touched
+            // בדיקה האם נלחץ כפתור "I don't have"
+            if (isIDontHaveButtonTouched(touchX, touchY)) {
+                handleIDontHave();
+                return true;
+            }
+
+            // שאר הטיפול באירועי מגע כפי שהיה קיים
             if (isScrollLeftButtonTouched(touchX, touchY)) {
                 scrollOffset = Math.max(0, scrollOffset - 280);
                 invalidate();
@@ -77,20 +102,19 @@ public class BoardGame extends View {
             }
 
             if (isMyTurn) {
-                // Check if packet was touched
+                // בדיקה האם נגעו בקופה
                 if (isPacketTouched(touchX, touchY)) {
                     handlePacketTouch();
                     return true;
                 }
 
-                // Check if any card was touched (adjusting for scroll)
+                // בדיקה האם נגעו בקלף
                 for (Card card : myCards) {
-                    if (card.isUserTouchMe((int) (touchX - scrollOffset), (int) touchY)) {
+                    if (card.isUserTouchMe((int) touchX + scrollOffset, (int) touchY)) {
                         handleCardTouch(card);
                         return true;
                     }
                 }
-
             }
         }
         return super.onTouchEvent(event);
@@ -203,23 +227,30 @@ public class BoardGame extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+
+        // ציור רקע
         canvas.drawRect(0, 0, getWidth(), getHeight(), backgroundPaint);
 
+        // ציור רכיבי המשחק
         drawPacket(canvas);
         drawPlayerCards(canvas, myCards);
         drawOpponentInfo(canvas);
         drawScores(canvas);
         drawScrollButtons(canvas);
 
+        // ציור כפתור "I don't have"
+        createIDontHaveButton(canvas);
+
+        // הודעת תור
         if (isMyTurn) {
             Paint textPaint = new Paint();
             textPaint.setColor(Color.RED);
             textPaint.setTextSize(60);
             textPaint.setTextAlign(Paint.Align.CENTER);
-            canvas.drawText("Your Turn!", getWidth() / 2, 200, textPaint);
+            canvas.drawText("Your Turn To Ask!", getWidth() / 2, 200, textPaint);
         }
 
-        // Check for end game
+        // בדיקת סיום משחק
         if (packet.isEmpty() && (myCards.isEmpty() || opponentCards.isEmpty())) {
             drawGameOver(canvas);
         }
@@ -255,6 +286,74 @@ public class BoardGame extends View {
             canvas.drawText(">", getWidth() - 20 - SCROLL_BUTTON_WIDTH/2, getHeight() - 450 + 15, textPaint);
         }
     }
+
+    // יצירת כפתור "I don't have"
+    private void createIDontHaveButton(Canvas canvas) {
+        // מיקום הכפתור מעל הקופה
+        int packetX = getWidth() / 2 - 130;
+        int packetY = getHeight() / 2 - 200;
+
+        // שמירת מיקום הכפתור
+        iDontHaveButtonX = packetX;
+        iDontHaveButtonY = packetY - iDontHaveButtonHeight - 20;
+
+        // צביעת הכפתור
+        Paint buttonPaint = new Paint();
+        buttonPaint.setColor(Color.LTGRAY);
+        buttonPaint.setStyle(Paint.Style.FILL);
+
+        // ציור מלבן עבור הכפתור
+        canvas.drawRect(
+                iDontHaveButtonX,
+                iDontHaveButtonY,
+                iDontHaveButtonX + iDontHaveButtonWidth,
+                iDontHaveButtonY + iDontHaveButtonHeight,
+                buttonPaint
+        );
+        // הוספת טקסט לכפתור
+        Paint textPaint = new Paint();
+        textPaint.setColor(Color.BLACK);
+        textPaint.setTextSize(40);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+
+        canvas.drawText(
+                "I don't have",
+                iDontHaveButtonX + iDontHaveButtonWidth / 2,
+                iDontHaveButtonY + iDontHaveButtonHeight / 2 + 15,
+                textPaint
+        );
+    }
+    // בדיקה האם לחצו על כפתור "I don't have"
+    private boolean isIDontHaveButtonTouched(float x, float y) {
+        return x >= iDontHaveButtonX &&
+                x <= iDontHaveButtonX + iDontHaveButtonWidth &&
+                y >= iDontHaveButtonY &&
+                y <= iDontHaveButtonY + iDontHaveButtonHeight;
+    }
+
+    // טיפול בלחיצה על כפתור "I don't have"
+    private void handleIDontHave() {
+        if (isMyTurn && !packet.isEmpty()) {
+            // שליפת קלף מהקופה
+            Card drawnCard = packet.drawCard();
+
+            // הוספת הקלף ליריב
+            if (isPlayer1) {
+                fbModule.moveCardToPlayer("player2", drawnCard);
+            } else {
+                fbModule.moveCardToPlayer("player1", drawnCard);
+            }
+
+            // עדכון הקופה ב-Firebase
+            fbModule.updatePacket(packet.getAllCards());
+
+            // החלפת תור
+            fbModule.switchTurn();
+        }
+    }
+
+
+
 
     private void drawGameOver(Canvas canvas) {
         Paint overlay = new Paint();

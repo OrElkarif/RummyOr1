@@ -223,6 +223,26 @@ public class BoardGame extends View {
         }
         fbModule.updatePacket(remainingCards);
     }
+    // Add this method to the BoardGame class
+    public void setBackgroundColor(String color) {
+        switch (color) {
+            case "Blue":
+                backgroundPaint.setColor(Color.BLUE);
+                break;
+            case "Red":
+                backgroundPaint.setColor(Color.RED);
+                break;
+            case "Pink":
+                backgroundPaint.setColor(0xFFF2ACB9);
+                break;
+            case "Yellow":
+                backgroundPaint.setColor(Color.YELLOW);
+                break;
+            default:
+                backgroundPaint.setColor(Color.parseColor("#D6EAF8")); // Default light blue
+        }
+        invalidate(); // Redraw the board with the new color
+    }
 
     @Override
     protected void onDraw(Canvas canvas) {

@@ -18,19 +18,29 @@ import java.io.ObjectInputStream;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    public static ObjectInputStream.GetField arrayList;
     private Button btnStartGame, btnSetting, btnInstruction, btnAchivevements;
     private String backgroundColor = "Blue";
     private ActivityResultLauncher<Intent> activityResultLauncher;
-   // private FbModule fbModule;
 
-    private LinearLayout linearLayout;//אחרי זה הולכים לאיניט לכתוב את ההפניה בשורה 42
+    private LinearLayout linearLayout;
+
+
+    private static MainActivity instance;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        instance = this;
         init();
+    }
+
+    public static MainActivity getContext() {
+        return instance;
+    }
+
+    public String getBackgroundColor() {
+        return backgroundColor;
     }
 
     private void init() {
@@ -52,14 +62,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         if (result.getResultCode() == RESULT_OK) {
                             Intent data = result.getData();
                             String str = data.getStringExtra("color");
-                            //fbModule.changeBagkgroundColor(str);
-                            Toast.makeText(MainActivity.this, "" + str, Toast.LENGTH_SHORT).show();
-                        }
+                            backgroundColor = str; // Update the local color variable
 
+                            // Update Firebase
+                            FbModule fbModule = new FbModule(null);
+                            fbModule.updateBackgroundColor(str);
+
+                            // Update the local background
+                            setBackgroundColor(str);
+
+                            Toast.makeText(MainActivity.this,
+                                    "Background color set to " + str, Toast.LENGTH_SHORT).show();
+                        }
                     }
                 });
-
-        //fbModule = new FbModule(this);
     }
 
 
@@ -71,6 +87,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         if (v == btnSetting) {
             Intent i = new Intent(this, SettingActivity.class);
+            i.putExtra("currentColor", backgroundColor); // Pass the current color
             activityResultLauncher.launch(i);
 
         }
@@ -106,6 +123,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case "Yellow": {
 
                 linearLayout.setBackgroundColor(Color.YELLOW);
+                break;
             }
 
             default:

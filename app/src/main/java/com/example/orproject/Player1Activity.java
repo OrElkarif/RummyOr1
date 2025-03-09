@@ -1,6 +1,8 @@
 package com.example.orproject;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -44,6 +46,27 @@ public class Player1Activity extends AppCompatActivity {
             @Override
             public void onPlayerScoreUpdated(String player, int score) {
                 boardGame.updateScore(score);
+            }
+
+            @Override
+            public void onBackgroundColorChanged(String color) {
+                LinearLayout gameLayout = findViewById(R.id.gameLayout);
+                switch (color) {
+                    case "Blue":
+                        gameLayout.setBackgroundColor(Color.BLUE);
+                        break;
+                    case "Red":
+                        gameLayout.setBackgroundColor(Color.RED);
+                        break;
+                    case "Pink":
+                        gameLayout.setBackgroundColor(0xFFF2ACB9);
+                        break;
+                    case "Yellow":
+                        gameLayout.setBackgroundColor(Color.YELLOW);
+                        break;
+                    default:
+                        gameLayout.setBackgroundColor(Color.WHITE);
+                }
             }
         });
     }

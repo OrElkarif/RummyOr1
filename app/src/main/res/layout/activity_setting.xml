@@ -8,43 +8,23 @@
     android:orientation="vertical"
     tools:context=".SettingActivity">
 
-
-
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textColor="@android:color/holo_blue_dark"
-        android:textSize="20dp"
-        android:text="select gamemode: "></TextView>
-    <Spinner
-        android:id="@+id/spinnerGM"
-        android:layout_width="300dp"
-        android:layout_height="100dp"></Spinner>
+        android:textSize="28dp"
+        android:text="Select Background Color" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@android:color/holo_blue_dark"
-        android:textSize="20dp"
-        android:text="select Background Color"
-        ></TextView>
     <Spinner
         android:id="@+id/spinnerBG"
         android:layout_width="300dp"
         android:layout_height="100dp"></Spinner>
 
-    <TextView
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-        android:textColor="@android:color/holo_blue_dark"
-        android:textSize="20dp"
-        android:text="select Amount of Players"
-    ></TextView>
-    <Spinner
-        android:id="@+id/spinnerPlayers"
-        android:layout_width="300dp"
-        android:layout_height="100dp"></Spinner>
-
-
+    <Button
+        android:id="@+id/btnSaveColor"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="Save Color" />
 
 </LinearLayout>

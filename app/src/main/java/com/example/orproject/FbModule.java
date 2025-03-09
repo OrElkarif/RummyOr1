@@ -22,6 +22,7 @@ public class FbModule {
         void onPacketChanged(ArrayList<Card> cards);
         void onTurnChanged(String currentPlayer);
         void onPlayerScoreUpdated(String player, int score);
+        void onBackgroundColorChanged(String color); // Add this line
     }
 
     public FbModule(GameStateListener listener) {
@@ -33,18 +34,12 @@ public class FbModule {
 
     private void setupListeners() {
         // האזנה לקלפים של שחקן 1
-        gameStateRef.child("player1Cards").addValueEventListener(new ValueEventListener() {
+        gameStateRef.child("backgroundColor").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                ArrayList<Card> cards = new ArrayList<>();
-                for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
-                    CardData cardData = cardSnapshot.getValue(CardData.class);
-                    if (cardData != null) {
-                        cards.add(new Card(cardData.category, cardData.name, cardData.id));
-                    }
-                }
-                if (gameStateListener != null) {
-                    gameStateListener.onPlayer1CardsChanged(cards);
+                String color = snapshot.getValue(String.class);
+                if (color != null && gameStateListener != null) {
+                    gameStateListener.onBackgroundColorChanged(color);
                 }
             }
 
@@ -207,4 +202,26 @@ public class FbModule {
             Log.e("FbModule", "שגיאה במעבר תור: " + e.getMessage());
         });
     }
-}
+
+    // Add this method to FbModule.java
+
+    // Add this method to update the background color
+    public void updateBackgroundColor(String color) {
+        gameStateRef.child("backgroundColor").setValue(color);
+    }
+
+    // Add this listener to listen for background color changes
+    private void setupBackgroundColorListener() {
+        gameStateRef.child("backgroundColor").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                String color = snapshot.getValue(String.class);
+                if (color != null && gameStateListener != null) {
+                    gameStateListener.onBackgroundColorChanged(color);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+        });
+    }}

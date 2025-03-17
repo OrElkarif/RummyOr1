@@ -33,6 +33,24 @@ public class FbModule {
     }
 
     private void setupListeners() {
+        gameStateRef.child("player1Cards").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                ArrayList<Card> cards = new ArrayList<>();
+                for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
+                    CardData cardData = cardSnapshot.getValue(CardData.class);
+                    if (cardData != null) {
+                        cards.add(new Card(cardData.category, cardData.name, cardData.id));
+                    }
+                }
+                if (gameStateListener != null) {
+                    gameStateListener.onPlayer1CardsChanged(cards);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+        });
         // האזנה לקלפים של שחקן 1
         gameStateRef.child("backgroundColor").addValueEventListener(new ValueEventListener() {
             @Override

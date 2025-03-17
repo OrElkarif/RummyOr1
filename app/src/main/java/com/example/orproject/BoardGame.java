@@ -225,23 +225,16 @@ public class BoardGame extends View {
     }
     // Add this method to the BoardGame class
     public void setBackgroundColor(String color) {
+        int colorValue;
         switch (color) {
-            case "Blue":
-                backgroundPaint.setColor(Color.BLUE);
-                break;
-            case "Red":
-                backgroundPaint.setColor(Color.RED);
-                break;
-            case "Pink":
-                backgroundPaint.setColor(0xFFF2ACB9);
-                break;
-            case "Yellow":
-                backgroundPaint.setColor(Color.YELLOW);
-                break;
-            default:
-                backgroundPaint.setColor(Color.parseColor("#D6EAF8")); // Default light blue
+            case "Blue": colorValue = Color.BLUE; break;
+            case "Red": colorValue = Color.RED; break;
+            case "Pink": colorValue = 0xFFF2ACB9; break;
+            case "Yellow": colorValue = Color.YELLOW; break;
+            default: colorValue = Color.parseColor("#D6EAF8");
         }
-        invalidate(); // Redraw the board with the new color
+        backgroundPaint.setColor(colorValue);
+        invalidate();
     }
 
     @Override
@@ -525,8 +518,8 @@ public class BoardGame extends View {
         }
 
         // Check if any category has 4 or more cards
-        for (Integer count : categoryCount.values()) {
-            if (count >= 4) {
+        for (String category : categoryCount.keySet()) {
+            if (categoryCount.get(category) >= 4) {
                 return true;
             }
         }
@@ -537,6 +530,7 @@ public class BoardGame extends View {
     /**
      * Remove a quartet from the player's hand and update score
      */
+
     public void removeQuartetFromHand(ArrayList<Card> cards) {
         if (!checkForQuartet(cards)) {
             return;
@@ -629,5 +623,4 @@ public class BoardGame extends View {
             // Update the UI
             invalidate();
         }
-    }
-}
+    }}

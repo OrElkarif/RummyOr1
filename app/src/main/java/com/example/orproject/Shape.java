@@ -2,7 +2,7 @@ package com.example.orproject;
 
 import android.graphics.Canvas;
 
-public class Shape {
+public class Shape {//בינתיים הפעולה כמעט ולא בשימוש, מעדיף לא לגעת בינתיים כדי לא להרוס בטעות את המשחק
     public Shape() {
         this.x = x;
         this.y = y;

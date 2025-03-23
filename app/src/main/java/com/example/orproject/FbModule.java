@@ -96,6 +96,7 @@ public class FbModule {
                             }
                         }
 
+                        Log.d("FbModule", "Player1: Updating player1 cards, count: " + cards.size());
                         ((Player1Activity) context).boardGame.updatePlayerCards(cards, true);
                     } catch (Exception e) {
                         Log.e("FbModule", "שגיאה בעיבוד קלפי שחקן 1: " + e.getMessage());
@@ -122,6 +123,7 @@ public class FbModule {
                             }
                         }
 
+                        Log.d("FbModule", "Player1: Updating player2 cards, count: " + cards.size());
                         ((Player1Activity) context).boardGame.updatePlayerCards(cards, false);
                     } catch (Exception e) {
                         Log.e("FbModule", "שגיאה בעיבוד קלפי שחקן 2: " + e.getMessage());

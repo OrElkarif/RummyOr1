@@ -57,7 +57,7 @@ public class BoardGame extends View { // הגדרת המחלקה BoardGame שי�
     public BoardGame(Context context, boolean isPlayer1) { // הבנאי מקבל קונטקסט ומשתנה המציין אם זה שחקן 1
         super(context); // קריאה לבנאי של המחלקה הבסיסית View
         this.isPlayer1 = isPlayer1; // שמירת המשתנה המציין אם זה שחקן 1
-        this.fbModule = new FbModule(null); // יצירת אובייקט של מודול ה-Firebase
+        this.fbModule = new FbModule(context); // יצירת אובייקט של מודול ה-Firebase
 
         // הגדרת רקע כחול בהיר
         backgroundPaint = new Paint(); // יצירת אובייקט Paint
@@ -226,6 +226,7 @@ public class BoardGame extends View { // הגדרת המחלקה BoardGame שי�
         } catch (Exception e) {
             Log.e("BoardGame", "שגיאה באתחול המשחק: " + e.getMessage());
         }
+        invalidate(); // גורם לציור מחדש של התצוגה
     }
 
     // הוספת פונקציה להגדרת צבע הרקע
@@ -249,7 +250,7 @@ public class BoardGame extends View { // הגדרת המחלקה BoardGame שי�
         super.onDraw(canvas); // קריאה לפונקצית הציור של המחלקה הבסיסית
 
         // ציור רקע
-        canvas.drawRect(0, 0, getWidth(), getHeight(), backgroundPaint); // ציור מלבן ברוחב וגובה המסך בצבע הרקע
+        canvas.drawRect(0, 0, getWidth(), getHeight(), backgroundPaint); // ציור מלבן ברוחב וגובה המסך בצבע הרקע (עבד, אך לאחר הוספת הרקע פחות)
 
         // ציור רכיבי המשחק
         drawPacket(canvas); // ציור הקופה
@@ -463,30 +464,40 @@ public class BoardGame extends View { // הגדרת המחלקה BoardGame שי�
                 50, 100, textPaint);
     }
 
-    public void updatePlayerCards(ArrayList<Card> cards, boolean isPlayer1Update) { // פונקציה שמעדכנת את הקלפים של השחקן
-        if (isPlayer1Update) { // בדיקה אם העדכון הוא לשחקן 1
-            player1Cards = new ArrayList<>(cards); // עדכון מערך הקלפים של שחקן 1
-            if (isPlayer1) { // בדיקה אם השחקן הנוכחי הוא שחקן 1
-                myCards.clear(); // ניקוי מערך הקלפים של השחקן הנוכחי
-                myCards.addAll(player1Cards); // הוספת כל הקלפים של שחקן 1 למערך הקלפים של השחקן הנוכחי
-            } else { // אם השחקן הנוכחי הוא שחקן 2
-                opponentCards.clear(); // ניקוי מערך הקלפים של היריב
-                opponentCards.addAll(player1Cards); // הוספת כל הקלפים של שחקן 1 למערך הקלפים של היריב
+    public void updatePlayerCards(ArrayList<Card> cards, boolean isPlayer1Update) {
+        Log.d("BoardGame", "updatePlayerCards: isPlayer1Update=" + isPlayer1Update +
+                ", cards=" + (cards != null ? cards.size() : "null") +
+                ", isPlayer1=" + isPlayer1);
+
+        // עדכון המערך הגלובלי המתאים
+        if (isPlayer1Update) {
+            player1Cards = new ArrayList<>(cards);
+        } else {
+            player2Cards = new ArrayList<>(cards);
+        }
+
+        // עדכון הקלפים שלי ושל היריב בהתאם למי אני
+        if (isPlayer1) {
+            // אני שחקן 1
+            if (isPlayer1Update) {
+                myCards = new ArrayList<>(cards);
+            } else {
+                opponentCards = new ArrayList<>(cards);
             }
-        } else { // אם העדכון הוא לשחקן 2
-            player2Cards = new ArrayList<>(cards); // עדכון מערך הקלפים של שחקן 2
-            if (!isPlayer1) { // בדיקה אם השחקן הנוכחי הוא שחקן 2
-                myCards.clear(); // ניקוי מערך הקלפים של השחקן הנוכחי
-                myCards.addAll(player2Cards); // הוספת כל הקלפים של שחקן 2 למערך הקלפים של השחקן הנוכחי
-            } else { // אם השחקן הנוכחי הוא שחקן 1
-                opponentCards.clear(); // ניקוי מערך הקלפים של היריב
-                opponentCards.addAll(player2Cards); // הוספת כל הקלפים של שחקן 2 למערך הקלפים של היריב
+        } else {
+            // אני שחקן 2
+            if (isPlayer1Update) {
+                opponentCards = new ArrayList<>(cards);
+            } else {
+                myCards = new ArrayList<>(cards);
             }
         }
 
-        updateOpponentCardCount(); // עדכון מספר הקלפים של היריב
-        invalidate(); // גורם לציור מחדש של התצוגה
-    }private void updateOpponentCardCount() { // פונקציה שמעדכנת את מספר הקלפים של היריב
+        updateOpponentCardCount();
+        Log.d("BoardGame", "After update: myCards=" + myCards.size() + ", opponentCards=" + opponentCards.size());
+        invalidate();
+    }
+    private void updateOpponentCardCount() { // פונקציה שמעדכנת את מספר הקלפים של היריב
         if (tvOpponentCards != null) { // בדיקה אם יש TextView להצגת מספר הקלפים של היריב
             String opponentName = isPlayer1 ? "Player 2" : "Player 1"; // משתנה המכיל את הטקסט המציין את היריב
             tvOpponentCards.setText(opponentName + "'s Cards: " + opponentCards.size()); // עדכון הטקסט המציג את מספר הקלפים של היריב

@@ -33,7 +33,7 @@ public class SettingActivity extends AppCompatActivity {
 
         // Initialize views
         colorSpinner = findViewById(R.id.spinnerBG);
-        btnSaveColor = findViewById(R.id.btnSaveColor); // Make sure this ID matches your layout
+        btnSaveColor = findViewById(R.id.btnSaveColor);
 
         // Set up the spinner with color options
         String[] colors = {"Blue", "Red", "Pink", "Yellow"};

@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -12,16 +13,23 @@ import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
 public class SettingActivity extends AppCompatActivity {
 
     private Spinner colorSpinner;
     private Button btnSaveColor;
     private String selectedColor = "Blue"; // Default color
+    private DatabaseReference gameStateRef;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_setting);
+
+        // יצירת גישה ישירות ל-Firebase
+        gameStateRef = FirebaseDatabase.getInstance().getReference("gameState");
 
         // Initialize views
         colorSpinner = findViewById(R.id.spinnerBG);
@@ -64,10 +72,18 @@ public class SettingActivity extends AppCompatActivity {
         btnSaveColor.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Return the selected color back to the calling activity
+                // שמירת הצבע הנבחר ישירות ב-Firebase
+                gameStateRef.child("backgroundColor").setValue(selectedColor);
+
+                // החזרת הצבע הנבחר לאקטיביטי הקודמת
                 Intent resultIntent = new Intent();
                 resultIntent.putExtra("color", selectedColor);
                 setResult(RESULT_OK, resultIntent);
+
+                // הצגת הודעת הצלחה
+                Toast.makeText(SettingActivity.this, "Color saved: " + selectedColor, Toast.LENGTH_SHORT).show();
+
+                // סיום האקטיביטי
                 finish();
             }
         });
@@ -89,18 +105,9 @@ public class SettingActivity extends AppCompatActivity {
             case "Yellow":
                 rootView.setBackgroundColor(Color.YELLOW);
                 break;
+            default:
+                rootView.setBackgroundColor(Color.WHITE);
+                break;
         }
-    }
-
-    // This method can be removed if you're using the save button
-    public void selectColor(View view) {
-        String color = ""; // Set based on which button was clicked
-
-        // Example: if (view.getId() == R.id.btnBlue) color = "Blue";
-
-        Intent intent = new Intent();
-        intent.putExtra("color", color);
-        setResult(RESULT_OK, intent);
-        finish();
     }
 }

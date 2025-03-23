@@ -4,70 +4,87 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.LinearLayout;
-import android.widget.TextView;
-import java.util.ArrayList;
 
 public class Player2Activity extends AppCompatActivity {
-    private BoardGame boardGame;
+    // מופע של לוח המשחק עבור שחקן 2
+    public BoardGame boardGame;
+    // מודול פיירבייס
     private FbModule fbModule;
+    // לייאאוט של מסך המשחק
+    private LinearLayout gameLayout;
+    // הצבע הנוכחי
+    private String currentColor = "Blue";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game);
 
-        LinearLayout ll = findViewById(R.id.ll);
-        boardGame = new BoardGame(this, false); // false for Player2
-        ll.addView(boardGame);
+        try {
+            // מציאת הלייאאוט הלינארי עבור לוח המשחק
+            LinearLayout ll = findViewById(R.id.ll);
+            // מציאת הלייאאוט של המשחק עבור צבע הרקע
+            gameLayout = findViewById(R.id.gameLayout);
 
-        fbModule = new FbModule(new FbModule.GameStateListener() {
-            @Override
-            public void onPlayer1CardsChanged(ArrayList<Card> cards) {
-                boardGame.updatePlayerCards(cards, true);
-            }
+            // יצירת מופע חדש של לוח משחק עבור שחקן 2
+            boardGame = new BoardGame(this, false); // false עבור שחקן 2
+            // הוספת תצוגת לוח המשחק ללייאאוט
+            ll.addView(boardGame);
 
-            @Override
-            public void onPlayer2CardsChanged(ArrayList<Card> cards) {
-                boardGame.updatePlayerCards(cards, false);
-            }
+            // אתחול מודול פיירבייס עם האקטיביטי הנוכחית
+            fbModule = new FbModule(this);
 
-
-            @Override
-            public void onPacketChanged(ArrayList<Card> cards) {
-                boardGame.updatePacket(cards);
-            }
-
-            @Override
-            public void onTurnChanged(String currentPlayer) {
-                boardGame.setTurn(currentPlayer.equals("player2"));
-            }
-
-            @Override
-            public void onPlayerScoreUpdated(String player, int score) {
-                boardGame.updateScore(score);
-            }
-
-            @Override
-            public void onBackgroundColorChanged(String color) {
-                LinearLayout gameLayout = findViewById(R.id.gameLayout);
-                switch (color) {
-                    case "Blue":
-                        gameLayout.setBackgroundColor(Color.BLUE);
-                        break;
-                    case "Red":
-                        gameLayout.setBackgroundColor(Color.RED);
-                        break;
-                    case "Pink":
-                        gameLayout.setBackgroundColor(0xFFF2ACB9);
-                        break;
-                    case "Yellow":
-                        gameLayout.setBackgroundColor(Color.YELLOW);
-                        break;
-                    default:
-                        gameLayout.setBackgroundColor(Color.WHITE);
+            // בדיקה אם יש צבע שמור בפיירבייס
+            fbModule.gameStateRef.child("backgroundColor").get().addOnSuccessListener(snapshot -> {
+                String color = snapshot.getValue(String.class);
+                if (color != null) {
+                    // עדכון הצבע הנוכחי
+                    currentColor = color;
+                    // עדכון הלייאאוט
+                    setBackgroundColor(color);
+                    // עדכון ה-Canvas
+                    if (boardGame != null) {
+                        boardGame.setBackgroundColor(color);
+                    }
                 }
-            }
-        });
+            });
+        } catch (Exception e) {
+            Log.e("Player2Activity", "שגיאה באתחול האקטיביטי: " + e.getMessage());
+        }
+    }
+
+    // שיטה להגדרת צבע הרקע של האקטיביטי
+    public void setBackgroundColor(String color) {
+        // שמירת מצב הצבע האחרון
+        currentColor = color;
+
+        // שינוי צבע הרקע של המסך
+        int colorValue;
+        switch (color) {
+            case "Blue": colorValue = Color.BLUE; break;
+            case "Red": colorValue = Color.RED; break;
+            case "Pink": colorValue = 0xFFF2ACB9; break;
+            case "Yellow": colorValue = Color.YELLOW; break;
+            default: colorValue = Color.WHITE;
+        }
+
+        // עדכון הלייאאוט
+        gameLayout.setBackgroundColor(colorValue);
+
+        // עדכון לוח המשחק (אך בלי שהלוח יעדכן שוב את הצבע ב-Firebase)
+        if (boardGame != null) {
+            boardGame.setBackgroundColor(color);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // עדכון צבע הרקע בעת חזרה לאקטיביטי
+        if (boardGame != null) {
+            boardGame.setBackgroundColor(currentColor);
+        }
     }
 }

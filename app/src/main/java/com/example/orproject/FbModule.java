@@ -4,186 +4,452 @@ import android.content.Context;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+
 import java.util.ArrayList;
 
 public class FbModule {
-    private FirebaseDatabase firebaseDatabase;
-    private static DatabaseReference gameStateRef;
-    private GameStateListener gameStateListener;
+    // מסד הנתונים של פיירבייס
+    FirebaseDatabase database;
+    // הפניה למסד הנתונים
+    DatabaseReference gameStateRef;
+    // קונטקסט של האקטיביטי
+    Context context;
 
-    public interface GameStateListener {
-        void onPlayer1CardsChanged(ArrayList<Card> cards);
-        void onPlayer2CardsChanged(ArrayList<Card> cards);
-        void onPacketChanged(ArrayList<Card> cards);
-        void onTurnChanged(String currentPlayer);
-        void onPlayerScoreUpdated(String player, int score);
-        void onBackgroundColorChanged(String color); // Add this line
+    // בנאי המחלקה
+    public FbModule(Context context) {
+        this.context = context;
+        // איתחול מסד הנתונים
+        database = FirebaseDatabase.getInstance();
+        // יצירת הפניה לצומת gameState
+        gameStateRef = database.getReference("gameState");
+
+        // הגדרת מאזינים רק אם יש קונטקסט
+        if (context != null) {
+            setupListeners();
+        }
     }
 
-    public FbModule(GameStateListener listener) {
-        this.gameStateListener = listener;
-        firebaseDatabase = FirebaseDatabase.getInstance();
-        gameStateRef = firebaseDatabase.getReference("gameState");
-        setupListeners();
-    }
-
+    // הגדרת כל המאזינים
     private void setupListeners() {
-        gameStateRef.child("player1Cards").addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                ArrayList<Card> cards = new ArrayList<>();
-                for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
-                    CardData cardData = cardSnapshot.getValue(CardData.class);
-                    if (cardData != null) {
-                        cards.add(new Card(cardData.category, cardData.name, cardData.id));
-                    }
-                }
-                if (gameStateListener != null) {
-                    gameStateListener.onPlayer1CardsChanged(cards);
-                }
-            }
+        // מאזין לצבע רקע
+        setupBackgroundColorListener();
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
-        });
-        // האזנה לקלפים של שחקן 1
-        gameStateRef.child("backgroundColor").addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                String color = snapshot.getValue(String.class);
-                if (color != null && gameStateListener != null) {
-                    gameStateListener.onBackgroundColorChanged(color);
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
-        });
-
-        // האזנה לקלפים של שחקן 2
-        gameStateRef.child("player2Cards").addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                ArrayList<Card> cards = new ArrayList<>();
-                for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
-                    CardData cardData = cardSnapshot.getValue(CardData.class);
-                    if (cardData != null) {
-                        cards.add(new Card(cardData.category, cardData.name, cardData.id));
-                    }
-                }
-                if (gameStateListener != null) {
-                    gameStateListener.onPlayer2CardsChanged(cards);
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
-        });
-
-        // האזנה לקופה
-        gameStateRef.child("packet").addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                ArrayList<Card> cards = new ArrayList<>();
-                for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
-                    CardData cardData = cardSnapshot.getValue(CardData.class);
-                    if (cardData != null) {
-                        cards.add(new Card(cardData.category, cardData.name, cardData.id));
-                    }
-                }
-                if (gameStateListener != null) {
-                    gameStateListener.onPacketChanged(cards);
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
-        });
-
-        // האזנה לתור
-        gameStateRef.child("currentTurn").addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                String currentPlayer = snapshot.getValue(String.class);
-                if (gameStateListener != null && currentPlayer != null) {
-                    gameStateListener.onTurnChanged(currentPlayer);
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
-        });
-
-        // האזנה לניקוד
-        gameStateRef.child("playerScores").addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                for (DataSnapshot scoreSnapshot : snapshot.getChildren()) {
-                    String player = scoreSnapshot.getKey();
-                    int score = scoreSnapshot.getValue(Integer.class);
-                    if (gameStateListener != null) {
-                        gameStateListener.onPlayerScoreUpdated(player, score);
-                    }
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
-        });
+        // הוספת מאזינים נוספים לפי סוג האקטיביטי
+        if (context instanceof Player1Activity) {
+            setupPlayer1Listeners();
+        } else if (context instanceof Player2Activity) {
+            setupPlayer2Listeners();
+        }
     }
 
-    // עדכון הקלפים של שחקן 1
+    // מאזין לצבע רקע
+    private void setupBackgroundColorListener() {
+        try {
+            gameStateRef.child("backgroundColor").addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    if (context == null) return;
+
+                    String color = snapshot.getValue(String.class);
+                    if (color != null) {
+                        // עדכון צבע הרקע לפי סוג האקטיביטי
+                        if (context instanceof Player1Activity) {
+                            ((Player1Activity) context).setBackgroundColor(color);
+                        } else if (context instanceof Player2Activity) {
+                            ((Player2Activity) context).setBackgroundColor(color);
+                        } else if (context instanceof GameActivity) {
+                            ((GameActivity) context).setBackgroundColor(color);
+                        }
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    Log.e("FbModule", "שגיאה בקריאת צבע רקע: " + error.getMessage());
+                }
+            });
+        } catch (Exception e) {
+            Log.e("FbModule", "שגיאה בהגדרת מאזין לצבע רקע: " + e.getMessage());
+        }
+    }
+
+    // מאזינים לשחקן 1
+    private void setupPlayer1Listeners() {
+        try {
+            // מאזין לקלפים של שחקן 1
+            gameStateRef.child("player1Cards").addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    try {
+                        ArrayList<Card> cards = new ArrayList<>();
+
+                        for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
+                            CardData cardData = cardSnapshot.getValue(CardData.class);
+                            if (cardData != null) {
+                                cards.add(new Card(cardData.category, cardData.name, cardData.id));
+                            }
+                        }
+
+                        ((Player1Activity) context).boardGame.updatePlayerCards(cards, true);
+                    } catch (Exception e) {
+                        Log.e("FbModule", "שגיאה בעיבוד קלפי שחקן 1: " + e.getMessage());
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    Log.e("FbModule", "שגיאה בקריאת קלפי שחקן 1: " + error.getMessage());
+                }
+            });
+
+            // מאזין לקלפים של שחקן 2
+            gameStateRef.child("player2Cards").addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    try {
+                        ArrayList<Card> cards = new ArrayList<>();
+
+                        for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
+                            CardData cardData = cardSnapshot.getValue(CardData.class);
+                            if (cardData != null) {
+                                cards.add(new Card(cardData.category, cardData.name, cardData.id));
+                            }
+                        }
+
+                        ((Player1Activity) context).boardGame.updatePlayerCards(cards, false);
+                    } catch (Exception e) {
+                        Log.e("FbModule", "שגיאה בעיבוד קלפי שחקן 2: " + e.getMessage());
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    Log.e("FbModule", "שגיאה בקריאת קלפי שחקן 2: " + error.getMessage());
+                }
+            });
+
+            // מאזין לקופה
+            gameStateRef.child("packet").addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    try {
+                        ArrayList<Card> cards = new ArrayList<>();
+
+                        for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
+                            CardData cardData = cardSnapshot.getValue(CardData.class);
+                            if (cardData != null) {
+                                cards.add(new Card(cardData.category, cardData.name, cardData.id));
+                            }
+                        }
+
+                        ((Player1Activity) context).boardGame.updatePacket(cards);
+                    } catch (Exception e) {
+                        Log.e("FbModule", "שגיאה בעיבוד קלפי הקופה: " + e.getMessage());
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    Log.e("FbModule", "שגיאה בקריאת קלפי הקופה: " + error.getMessage());
+                }
+            });
+
+            // מאזין לתור
+            gameStateRef.child("currentTurn").addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    try {
+                        String currentPlayer = snapshot.getValue(String.class);
+                        if (currentPlayer != null) {
+                            ((Player1Activity) context).boardGame.setTurn(currentPlayer.equals("player1"));
+                        }
+                    } catch (Exception e) {
+                        Log.e("FbModule", "שגיאה בעיבוד התור הנוכחי: " + e.getMessage());
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    Log.e("FbModule", "שגיאה בקריאת התור הנוכחי: " + error.getMessage());
+                }
+            });
+
+            // מאזין לניקוד
+            gameStateRef.child("playerScores").child("player2").addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    try {
+                        Integer score = snapshot.getValue(Integer.class);
+                        if (score != null) {
+                            ((Player1Activity) context).boardGame.updateScore(score);
+                        }
+                    } catch (Exception e) {
+                        Log.e("FbModule", "שגיאה בעיבוד ניקוד: " + e.getMessage());
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    Log.e("FbModule", "שגיאה בקריאת ניקוד: " + error.getMessage());
+                }
+            });
+        } catch (Exception e) {
+            Log.e("FbModule", "שגיאה כללית במאזינים לשחקן 1: " + e.getMessage());
+        }
+    }
+
+    // מאזינים לשחקן 2
+    private void setupPlayer2Listeners() {
+        try {
+            // מאזין לקלפים של שחקן 1
+            gameStateRef.child("player1Cards").addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    try {
+                        ArrayList<Card> cards = new ArrayList<>();
+
+                        for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
+                            CardData cardData = cardSnapshot.getValue(CardData.class);
+                            if (cardData != null) {
+                                cards.add(new Card(cardData.category, cardData.name, cardData.id));
+                            }
+                        }
+
+                        ((Player2Activity) context).boardGame.updatePlayerCards(cards, true);
+                    } catch (Exception e) {
+                        Log.e("FbModule", "שגיאה בעיבוד קלפי שחקן 1: " + e.getMessage());
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    Log.e("FbModule", "שגיאה בקריאת קלפי שחקן 1: " + error.getMessage());
+                }
+            });
+
+            // מאזין לקלפים של שחקן 2
+            gameStateRef.child("player2Cards").addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    try {
+                        ArrayList<Card> cards = new ArrayList<>();
+
+                        for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
+                            CardData cardData = cardSnapshot.getValue(CardData.class);
+                            if (cardData != null) {
+                                cards.add(new Card(cardData.category, cardData.name, cardData.id));
+                            }
+                        }
+
+                        ((Player2Activity) context).boardGame.updatePlayerCards(cards, false);
+                    } catch (Exception e) {
+                        Log.e("FbModule", "שגיאה בעיבוד קלפי שחקן 2: " + e.getMessage());
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    Log.e("FbModule", "שגיאה בקריאת קלפי שחקן 2: " + error.getMessage());
+                }
+            });
+
+            // מאזין לקופה
+            gameStateRef.child("packet").addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    try {
+                        ArrayList<Card> cards = new ArrayList<>();
+
+                        for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
+                            CardData cardData = cardSnapshot.getValue(CardData.class);
+                            if (cardData != null) {
+                                cards.add(new Card(cardData.category, cardData.name, cardData.id));
+                            }
+                        }
+
+                        ((Player2Activity) context).boardGame.updatePacket(cards);
+                    } catch (Exception e) {
+                        Log.e("FbModule", "שגיאה בעיבוד קלפי הקופה: " + e.getMessage());
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    Log.e("FbModule", "שגיאה בקריאת קלפי הקופה: " + error.getMessage());
+                }
+            });
+
+            // מאזין לתור
+            gameStateRef.child("currentTurn").addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    try {
+                        String currentPlayer = snapshot.getValue(String.class);
+                        if (currentPlayer != null) {
+                            ((Player2Activity) context).boardGame.setTurn(currentPlayer.equals("player2"));
+                        }
+                    } catch (Exception e) {
+                        Log.e("FbModule", "שגיאה בעיבוד התור הנוכחי: " + e.getMessage());
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    Log.e("FbModule", "שגיאה בקריאת התור הנוכחי: " + error.getMessage());
+                }
+            });
+
+            // מאזין לניקוד
+            gameStateRef.child("playerScores").child("player1").addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    try {
+                        Integer score = snapshot.getValue(Integer.class);
+                        if (score != null) {
+                            ((Player2Activity) context).boardGame.updateScore(score);
+                        }
+                    } catch (Exception e) {
+                        Log.e("FbModule", "שגיאה בעיבוד ניקוד: " + e.getMessage());
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    Log.e("FbModule", "שגיאה בקריאת ניקוד: " + error.getMessage());
+                }
+            });
+        } catch (Exception e) {
+            Log.e("FbModule", "שגיאה כללית במאזינים לשחקן 2: " + e.getMessage());
+        }
+    }
+
+    // עדכון קלפי שחקן 1
     public void updatePlayer1Cards(ArrayList<Card> cards) {
-        gameStateRef.child("player1Cards").setValue(serializeCards(cards));
+        try {
+            gameStateRef.child("player1Cards").setValue(serializeCards(cards));
+        } catch (Exception e) {
+            Log.e("FbModule", "שגיאה בעדכון קלפי שחקן 1: " + e.getMessage());
+        }
     }
 
-    // עדכון הקלפים של שחקן 2
+    // עדכון קלפי שחקן 2
     public void updatePlayer2Cards(ArrayList<Card> cards) {
-        gameStateRef.child("player2Cards").setValue(serializeCards(cards));
+        try {
+            gameStateRef.child("player2Cards").setValue(serializeCards(cards));
+        } catch (Exception e) {
+            Log.e("FbModule", "שגיאה בעדכון קלפי שחקן 2: " + e.getMessage());
+        }
     }
 
-    // עדכון הקופה
+    // עדכון קופה
     public void updatePacket(ArrayList<Card> cards) {
-        gameStateRef.child("packet").setValue(serializeCards(cards));
+        try {
+            gameStateRef.child("packet").setValue(serializeCards(cards));
+        } catch (Exception e) {
+            Log.e("FbModule", "שגיאה בעדכון הקופה: " + e.getMessage());
+        }
     }
 
-    // עדכון תור המשחק
+    // עדכון התור הנוכחי
     public static void updateTurn(String player) {
-        gameStateRef.child("currentTurn").setValue(player);
+        try {
+            FirebaseDatabase.getInstance().getReference("gameState").child("currentTurn").setValue(player);
+        } catch (Exception e) {
+            Log.e("FbModule", "שגיאה בעדכון התור: " + e.getMessage());
+        }
     }
 
-    // עדכון הניקוד של שחקן
+    // עדכון ניקוד שחקן
     public void updatePlayerScore(String player, int score) {
-        gameStateRef.child("playerScores").child(player).setValue(score);
+        try {
+            gameStateRef.child("playerScores").child(player).setValue(score);
+        } catch (Exception e) {
+            Log.e("FbModule", "שגיאה בעדכון ניקוד: " + e.getMessage());
+        }
     }
 
-    // הוספת קלף לשחקן
+    // מעבר קלף לשחקן
     public void moveCardToPlayer(String player, Card card) {
-        gameStateRef.child(player + "Cards").get().addOnSuccessListener(snapshot -> {
-            ArrayList<Card> cards = new ArrayList<>();
-            for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
-                CardData cardData = cardSnapshot.getValue(CardData.class);
-                if (cardData != null) {
-                    cards.add(new Card(cardData.category, cardData.name, cardData.id));
+        try {
+            gameStateRef.child(player + "Cards").get().addOnSuccessListener(snapshot -> {
+                try {
+                    ArrayList<Card> cards = new ArrayList<>();
+
+                    for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
+                        CardData cardData = cardSnapshot.getValue(CardData.class);
+                        if (cardData != null) {
+                            cards.add(new Card(cardData.category, cardData.name, cardData.id));
+                        }
+                    }
+
+                    cards.add(card);
+                    gameStateRef.child(player + "Cards").setValue(serializeCards(cards));
+                } catch (Exception e) {
+                    Log.e("FbModule", "שגיאה בהעברת קלף לשחקן: " + e.getMessage());
                 }
-            }
-            cards.add(card); // מוסיפים את הקלף החדש
-            gameStateRef.child(player + "Cards").setValue(serializeCards(cards)); // מעדכנים ב-Firebase
-        });
+            });
+        } catch (Exception e) {
+            Log.e("FbModule", "שגיאה כללית בהעברת קלף לשחקן: " + e.getMessage());
+        }
     }
 
+    // עדכון צבע רקע
+    public void updateBackgroundColor(String color) {
+        try {
+            gameStateRef.child("backgroundColor").setValue(color);
+        } catch (Exception e) {
+            Log.e("FbModule", "שגיאה בעדכון צבע רקע: " + e.getMessage());
+        }
+    }
 
-    // מחיקת כל הנתונים במשחק (למשחק חדש)
+    // החלפת תור
+    public void switchTurn() {
+        try {
+            gameStateRef.child("currentTurn").get().addOnSuccessListener(snapshot -> {
+                try {
+                    String currentTurn = snapshot.getValue(String.class);
+                    if (currentTurn != null) {
+                        String nextTurn = currentTurn.equals("player1") ? "player2" : "player1";
+                        updateTurn(nextTurn);
+                    }
+                } catch (Exception e) {
+                    Log.e("FbModule", "שגיאה בהחלפת תור: " + e.getMessage());
+                }
+            });
+        } catch (Exception e) {
+            Log.e("FbModule", "שגיאה כללית בהחלפת תור: " + e.getMessage());
+        }
+    }
+
+    // איפוס המשחק
     public void resetGame() {
-        gameStateRef.setValue(null);
+        try {
+            // במקום למחוק את כל הצומת, נאתחל את הערכים לריקים
+            gameStateRef.child("player1Cards").setValue(new ArrayList<>());
+            gameStateRef.child("player2Cards").setValue(new ArrayList<>());
+            gameStateRef.child("packet").setValue(new ArrayList<>());
+            gameStateRef.child("playerScores").child("player1").setValue(0);
+            gameStateRef.child("playerScores").child("player2").setValue(0);
+
+            // שימור צבע הרקע
+            gameStateRef.child("backgroundColor").get().addOnSuccessListener(snapshot -> {
+                String color = snapshot.getValue(String.class);
+                if (color == null) {
+                    gameStateRef.child("backgroundColor").setValue("Blue");
+                }
+            });
+        } catch (Exception e) {
+            Log.e("FbModule", "שגיאה באיפוס המשחק: " + e.getMessage());
+        }
     }
 
-    // עוזר להמיר קלפים לנתונים המתאימים ל-Firebase
+    // המרת קלפים לפורמט של מסד הנתונים
     private ArrayList<CardData> serializeCards(ArrayList<Card> cards) {
         ArrayList<CardData> cardDataList = new ArrayList<>();
         for (Card card : cards) {
@@ -192,54 +458,20 @@ public class FbModule {
         return cardDataList;
     }
 
-    // מחלקת עזר לשמירת קלפים ב-Firebase
-    private static class CardData {
+    // מחלקה לייצוג קלף במסד הנתונים
+    public class CardData {
         public String category;
         public String name;
         public int id;
 
-        public CardData() {} // נדרש ל-Firebase
+        public CardData() {
+            // בנאי ריק הנדרש לפיירבייס
+        }
 
         public CardData(String category, String name, int id) {
             this.category = category;
             this.name = name;
             this.id = id;
         }
-
-
-
     }
-    public void switchTurn() {
-        gameStateRef.child("currentTurn").get().addOnSuccessListener(snapshot -> {
-            String currentTurn = snapshot.getValue(String.class);
-            if (currentTurn != null) {
-                String nextTurn = currentTurn.equals("player1") ? "player2" : "player1";
-                updateTurn(nextTurn);
-            }
-        }).addOnFailureListener(e -> {
-            Log.e("FbModule", "שגיאה במעבר תור: " + e.getMessage());
-        });
-    }
-
-    // Add this method to FbModule.java
-
-    // Add this method to update the background color
-    public void updateBackgroundColor(String color) {
-        gameStateRef.child("backgroundColor").setValue(color);
-    }
-
-    // Add this listener to listen for background color changes
-    private void setupBackgroundColorListener() {
-        gameStateRef.child("backgroundColor").addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                String color = snapshot.getValue(String.class);
-                if (color != null && gameStateListener != null) {
-                    gameStateListener.onBackgroundColorChanged(color);
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
-        });
-    }}
+}

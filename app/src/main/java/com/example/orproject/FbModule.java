@@ -10,8 +10,11 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.database.GenericTypeIndicator;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class FbModule {
     // מסד הנתונים של פיירבייס
@@ -90,9 +93,13 @@ public class FbModule {
                         ArrayList<Card> cards = new ArrayList<>();
 
                         for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
-                            CardData cardData = cardSnapshot.getValue(CardData.class);
-                            if (cardData != null) {
-                                cards.add(new Card(cardData.category, cardData.name, cardData.id));
+                            // Manual field extraction
+                            String category = cardSnapshot.child("category").getValue(String.class);
+                            String name = cardSnapshot.child("name").getValue(String.class);
+                            Integer id = cardSnapshot.child("id").getValue(Integer.class);
+
+                            if (category != null && name != null && id != null) {
+                                cards.add(new Card(category, name, id));
                             }
                         }
 
@@ -117,9 +124,13 @@ public class FbModule {
                         ArrayList<Card> cards = new ArrayList<>();
 
                         for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
-                            CardData cardData = cardSnapshot.getValue(CardData.class);
-                            if (cardData != null) {
-                                cards.add(new Card(cardData.category, cardData.name, cardData.id));
+                            // Manual field extraction
+                            String category = cardSnapshot.child("category").getValue(String.class);
+                            String name = cardSnapshot.child("name").getValue(String.class);
+                            Integer id = cardSnapshot.child("id").getValue(Integer.class);
+
+                            if (category != null && name != null && id != null) {
+                                cards.add(new Card(category, name, id));
                             }
                         }
 
@@ -144,9 +155,13 @@ public class FbModule {
                         ArrayList<Card> cards = new ArrayList<>();
 
                         for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
-                            CardData cardData = cardSnapshot.getValue(CardData.class);
-                            if (cardData != null) {
-                                cards.add(new Card(cardData.category, cardData.name, cardData.id));
+                            // Manual field extraction
+                            String category = cardSnapshot.child("category").getValue(String.class);
+                            String name = cardSnapshot.child("name").getValue(String.class);
+                            Integer id = cardSnapshot.child("id").getValue(Integer.class);
+
+                            if (category != null && name != null && id != null) {
+                                cards.add(new Card(category, name, id));
                             }
                         }
 
@@ -217,9 +232,13 @@ public class FbModule {
                         ArrayList<Card> cards = new ArrayList<>();
 
                         for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
-                            CardData cardData = cardSnapshot.getValue(CardData.class);
-                            if (cardData != null) {
-                                cards.add(new Card(cardData.category, cardData.name, cardData.id));
+                            // Manual field extraction
+                            String category = cardSnapshot.child("category").getValue(String.class);
+                            String name = cardSnapshot.child("name").getValue(String.class);
+                            Integer id = cardSnapshot.child("id").getValue(Integer.class);
+
+                            if (category != null && name != null && id != null) {
+                                cards.add(new Card(category, name, id));
                             }
                         }
 
@@ -243,9 +262,13 @@ public class FbModule {
                         ArrayList<Card> cards = new ArrayList<>();
 
                         for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
-                            CardData cardData = cardSnapshot.getValue(CardData.class);
-                            if (cardData != null) {
-                                cards.add(new Card(cardData.category, cardData.name, cardData.id));
+                            // Manual field extraction
+                            String category = cardSnapshot.child("category").getValue(String.class);
+                            String name = cardSnapshot.child("name").getValue(String.class);
+                            Integer id = cardSnapshot.child("id").getValue(Integer.class);
+
+                            if (category != null && name != null && id != null) {
+                                cards.add(new Card(category, name, id));
                             }
                         }
 
@@ -269,9 +292,13 @@ public class FbModule {
                         ArrayList<Card> cards = new ArrayList<>();
 
                         for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
-                            CardData cardData = cardSnapshot.getValue(CardData.class);
-                            if (cardData != null) {
-                                cards.add(new Card(cardData.category, cardData.name, cardData.id));
+                            // Manual field extraction
+                            String category = cardSnapshot.child("category").getValue(String.class);
+                            String name = cardSnapshot.child("name").getValue(String.class);
+                            Integer id = cardSnapshot.child("id").getValue(Integer.class);
+
+                            if (category != null && name != null && id != null) {
+                                cards.add(new Card(category, name, id));
                             }
                         }
 
@@ -376,28 +403,105 @@ public class FbModule {
         }
     }
 
-    // מעבר קלף לשחקן
+    // מעבר קלף לשחקן - שיטה משופרת
     public void moveCardToPlayer(String player, Card card) {
         try {
-            gameStateRef.child(player + "Cards").get().addOnSuccessListener(snapshot -> {
+            Log.d("FbModule", "Moving card " + card.getCardName() + " to " + player);
+
+            // Get the reference to the player's cards
+            DatabaseReference playerCardsRef = gameStateRef.child(player + "Cards");
+
+            // First, get the current cards
+            playerCardsRef.get().addOnSuccessListener(snapshot -> {
                 try {
                     ArrayList<Card> cards = new ArrayList<>();
 
+                    // Parse existing cards with manual field extraction
                     for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
-                        CardData cardData = cardSnapshot.getValue(CardData.class);
-                        if (cardData != null) {
-                            cards.add(new Card(cardData.category, cardData.name, cardData.id));
+                        String category = cardSnapshot.child("category").getValue(String.class);
+                        String name = cardSnapshot.child("name").getValue(String.class);
+                        Integer id = cardSnapshot.child("id").getValue(Integer.class);
+
+                        if (category != null && name != null && id != null) {
+                            cards.add(new Card(category, name, id));
                         }
                     }
 
+                    // Add the new card
                     cards.add(card);
-                    gameStateRef.child(player + "Cards").setValue(serializeCards(cards));
+
+                    // Update immediately with the new list
+                    playerCardsRef.setValue(serializeCards(cards))
+                            .addOnSuccessListener(aVoid -> {
+                                Log.d("FbModule", "Successfully moved card to " + player);
+
+                                // Check for quartet in the receiving player's hand
+                                checkAndRemoveQuartet(player, cards);
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e("FbModule", "Failed to move card: " + e.getMessage());
+                            });
+
                 } catch (Exception e) {
-                    Log.e("FbModule", "שגיאה בהעברת קלף לשחקן: " + e.getMessage());
+                    Log.e("FbModule", "Error processing cards while moving card: " + e.getMessage());
                 }
+            }).addOnFailureListener(e -> {
+                Log.e("FbModule", "Failed to retrieve cards: " + e.getMessage());
             });
         } catch (Exception e) {
-            Log.e("FbModule", "שגיאה כללית בהעברת קלף לשחקן: " + e.getMessage());
+            Log.e("FbModule", "General error in moveCardToPlayer: " + e.getMessage());
+        }
+    }
+
+    // New helper method to check for and remove a quartet in the receiving player's hand
+    private void checkAndRemoveQuartet(String player, ArrayList<Card> cards) {
+        // Check if there's a quartet
+        HashMap<String, Integer> categoryCount = new HashMap<>();
+        for (Card card : cards) {
+            String category = card.getCatagory();
+            categoryCount.put(category, categoryCount.getOrDefault(category, 0) + 1);
+        }
+
+        // Find a category with 4 or more cards
+        String quartetCategory = null;
+        for (String category : categoryCount.keySet()) {
+            if (categoryCount.get(category) >= 4) {
+                quartetCategory = category;
+                break;
+            }
+        }
+
+        // If a quartet is found, remove it and update score
+        if (quartetCategory != null) {
+            final String category = quartetCategory;
+
+            // Find cards to remove
+            ArrayList<Card> cardsToRemove = new ArrayList<>();
+            int count = 0;
+
+            for (Card card : cards) {
+                if (card.getCatagory().equals(category) && count < 4) {
+                    cardsToRemove.add(card);
+                    count++;
+                }
+
+                if (count == 4) break;
+            }
+
+            // Remove the quartet cards
+            cards.removeAll(cardsToRemove);
+
+            // Update the player's cards
+            gameStateRef.child(player + "Cards").setValue(serializeCards(cards));
+
+            // Update the player's score
+            gameStateRef.child("playerScores").child(player).get().addOnSuccessListener(snapshot -> {
+                Integer currentScore = snapshot.getValue(Integer.class);
+                if (currentScore == null) currentScore = 0;
+
+                // Add 40 points for the quartet
+                gameStateRef.child("playerScores").child(player).setValue(currentScore + 40);
+            });
         }
     }
 
@@ -451,8 +555,8 @@ public class FbModule {
         }
     }
 
-    // המרת קלפים לפורמט של מסד הנתונים
-    private ArrayList<CardData> serializeCards(ArrayList<Card> cards) {
+    // החלפת המרת קלפים לפורמט של מסד הנתונים מפרטי למוגדר ציבורית
+    public ArrayList<CardData> serializeCards(ArrayList<Card> cards) {
         ArrayList<CardData> cardDataList = new ArrayList<>();
         for (Card card : cards) {
             cardDataList.add(new CardData(card.getCatagory(), card.getCardName(), card.getId()));
@@ -460,7 +564,60 @@ public class FbModule {
         return cardDataList;
     }
 
-    // מחלקה לייצוג קלף במסד הנתונים
+    // Method to reset Firebase data structures if needed
+    public void resetCardStructures() {
+        Log.d("FbModule", "Resetting card structures in Firebase");
+
+        // Reset player cards with empty arrays
+        gameStateRef.child("player1Cards").setValue(new ArrayList<>());
+        gameStateRef.child("player2Cards").setValue(new ArrayList<>());
+
+        // Reset scores
+        gameStateRef.child("playerScores").child("player1").setValue(0);
+        gameStateRef.child("playerScores").child("player2").setValue(0);
+
+        // Reset turn (start with player 1)
+        gameStateRef.child("currentTurn").setValue("player1");
+    }
+
+    // Add method to debug the card states
+    public void debugCardStates() {
+        Log.d("FbModule", "==== DEBUGGING CARD STATES ====");
+
+        gameStateRef.child("player1Cards").get().addOnSuccessListener(snapshot -> {
+            Log.d("FbModule", "Player 1 cards count: " + snapshot.getChildrenCount());
+            for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
+                // Manual field extraction
+                String category = cardSnapshot.child("category").getValue(String.class);
+                String name = cardSnapshot.child("name").getValue(String.class);
+                Integer id = cardSnapshot.child("id").getValue(Integer.class);
+
+                if (category != null && name != null && id != null) {
+                    Log.d("FbModule", "P1 Card: " + category + " - " + name + " (ID: " + id + ")");
+                }
+            }
+        });
+
+        gameStateRef.child("player2Cards").get().addOnSuccessListener(snapshot -> {
+            Log.d("FbModule", "Player 2 cards count: " + snapshot.getChildrenCount());
+            for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
+                // Manual field extraction
+                String category = cardSnapshot.child("category").getValue(String.class);
+                String name = cardSnapshot.child("name").getValue(String.class);
+                Integer id = cardSnapshot.child("id").getValue(Integer.class);
+
+                if (category != null && name != null && id != null) {
+                    Log.d("FbModule", "P2 Card: " + category + " - " + name + " (ID: " + id + ")");
+                }
+            }
+        });
+
+        gameStateRef.child("packet").get().addOnSuccessListener(snapshot -> {
+            Log.d("FbModule", "Packet cards count: " + snapshot.getChildrenCount());
+        });
+    }
+
+    // מחלקה לייצוג קלף במסד הנתונים - נשארת ללא שינוי
     public class CardData {
         public String category;
         public String name;

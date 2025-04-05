@@ -14,6 +14,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import java.util.ArrayList;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.database.GenericTypeIndicator;
+import java.util.HashMap;
+import java.util.Map;
 
 public class BoardGame extends View { // הגדרת המחלקה BoardGame שיורשת מ-View
     // משתני מצב המשחק
@@ -73,50 +79,157 @@ public class BoardGame extends View { // הגדרת המחלקה BoardGame שי�
         // אתחול המשחק
         initializeGame(); // קריאה לפונקציה שמאתחלת את המשחק
     }
-    @Override
-    public boolean onTouchEvent(MotionEvent event) { // פונקציה שמטפלת באירועי מגע על המסך
-        if (event.getAction() == MotionEvent.ACTION_DOWN) { // בדיקה אם האירוע הוא לחיצה על המסך
-            float touchX = event.getX(); // קבלת מיקום X של המגע
-            float touchY = event.getY(); // קבלת מיקום Y של המגע
+    private void directCardTouch(Card card) {
+        try {
+            Log.d("BoardGame", "Moving card: " + card.getCatagory() + " - " + card.getCardName());
 
-            // בדיקה האם נלחץ כפתור "I don't have"
-            if (isIDontHaveButtonTouched(touchX, touchY)) { // בדיקה אם המגע היה על כפתור "אין לי"
-                handleIDontHave(); // טיפול בלחיצה על כפתור "אין לי"
-                return true; // החזרת true מציינת שהאירוע טופל
-            }
+            // Remove card from player's hand
+            myCards.remove(card);
 
-            // שאר הטיפול באירועי מגע
-            if (isScrollLeftButtonTouched(touchX, touchY)) { // בדיקה אם המגע היה על כפתור גלילה שמאלה
-                scrollOffset = Math.max(0, scrollOffset - 280); // הזזת ההיסט שמאלה (מקסימום עד 0)
-                invalidate(); // גורם לציור מחדש של התצוגה
-                return true; // החזרת true מציינת שהאירוע טופל
-            } else if (isScrollRightButtonTouched(touchX, touchY)) { // בדיקה אם המגע היה על כפתור גלילה ימינה
-                if (canScrollRight) { // בדיקה אם ניתן לגלול ימינה
-                    scrollOffset += 280; // הזזת ההיסט ימינה
-                    invalidate(); // גורם לציור מחדש של התצוגה
-                }
-                return true; // החזרת true מציינת שהאירוע טופל
-            }
+            // Store the card data for transfer
+            String category = card.getCatagory();
+            String name = card.getCardName();
+            int id = card.getId();
 
-            if (isMyTurn) { // בדיקה אם זה התור של השחקן הנוכחי
-                // בדיקה האם נגעו בקופה
-                if (isPacketTouched(touchX, touchY)) { // בדיקה אם המגע היה על הקופה
-                    handlePacketTouch(); // טיפול במגע על הקופה
-                    return true; // החזרת true מציינת שהאירוע טופל
-                }
+            // Update Firebase with changes to current player's cards
+            if (isPlayer1) {
+                Log.d("BoardGame", "Player 1 transferring card to Player 2");
+                fbModule.updatePlayer1Cards(myCards);
 
-                // בדיקה האם נגעו בקלף
-                for (Card card : myCards) { // מעבר על כל הקלפים של השחקן הנוכחי
-                    if (card.isUserTouchMe((int) touchX + scrollOffset, (int) touchY)) { // בדיקה אם המגע היה על הקלף
-                        handleCardTouch(card); // טיפול במגע על הקלף
-                        return true; // החזרת true מציינת שהאירוע טופל
+                // Get opponent cards and add this card
+                fbModule.gameStateRef.child("player2Cards").get().addOnSuccessListener(snapshot -> {
+                    ArrayList<Card> opponentCards = new ArrayList<>();
+
+                    // Parse existing cards
+                    for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
+                        // Manual field extraction
+                        String cardCategory = cardSnapshot.child("category").getValue(String.class);
+                        String cardName = cardSnapshot.child("name").getValue(String.class);
+                        Integer cardId = cardSnapshot.child("id").getValue(Integer.class);
+
+                        if (cardCategory != null && cardName != null && cardId != null) {
+                            opponentCards.add(new Card(cardCategory, cardName, cardId));
+                        }
                     }
-                }
+
+                    // Add the selected card
+                    opponentCards.add(new Card(category, name, id));
+
+                    // Update opponent cards in Firebase
+                    fbModule.gameStateRef.child("player2Cards").setValue(fbModule.serializeCards(opponentCards))
+                            .addOnSuccessListener(aVoid -> {
+                                Log.d("BoardGame", "Successfully transferred card to player 2");
+                                // Switch turns after successful transfer
+                                fbModule.switchTurn();
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e("BoardGame", "Failed to transfer card: " + e.getMessage());
+                            });
+                });
+            } else {
+                Log.d("BoardGame", "Player 2 transferring card to Player 1");
+                fbModule.updatePlayer2Cards(myCards);
+
+                // Get opponent cards and add this card
+                fbModule.gameStateRef.child("player1Cards").get().addOnSuccessListener(snapshot -> {
+                    ArrayList<Card> opponentCards = new ArrayList<>();
+
+                    // Parse existing cards
+                    for (DataSnapshot cardSnapshot : snapshot.getChildren()) {
+                        // Manual field extraction
+                        String cardCategory = cardSnapshot.child("category").getValue(String.class);
+                        String cardName = cardSnapshot.child("name").getValue(String.class);
+                        Integer cardId = cardSnapshot.child("id").getValue(Integer.class);
+
+                        if (cardCategory != null && cardName != null && cardId != null) {
+                            opponentCards.add(new Card(cardCategory, cardName, cardId));
+                        }
+                    }
+
+                    // Add the selected card
+                    opponentCards.add(new Card(category, name, id));
+
+                    // Update opponent cards in Firebase
+                    fbModule.gameStateRef.child("player1Cards").setValue(fbModule.serializeCards(opponentCards))
+                            .addOnSuccessListener(aVoid -> {
+                                Log.d("BoardGame", "Successfully transferred card to player 1");
+                                // Switch turns after successful transfer
+                                fbModule.switchTurn();
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e("BoardGame", "Failed to transfer card: " + e.getMessage());
+                            });
+                });
             }
+
+            // Refresh the display immediately (UI will update again when Firebase listeners trigger)
+            invalidate();
+
+        } catch (Exception e) {
+            Log.e("BoardGame", "Error in directCardTouch: " + e.getMessage(), e);
         }
-        return super.onTouchEvent(event); // קריאה לפונקציה של המחלקה הבסיסית אם האירוע לא טופל
     }
 
+    // Also add this modified onTouchEvent method to ensure it calls directCardTouch instead of handleCardTouch
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            float touchX = event.getX();
+            float touchY = event.getY();
+
+            // Debug touch coordinates
+            Log.d("BoardGame", "Touch at X: " + touchX + ", Y: " + touchY);
+
+            // Check if "I don't have" button was touched
+            if (isIDontHaveButtonTouched(touchX, touchY)) {
+                Log.d("BoardGame", "I don't have button touched");
+                handleIDontHave();
+                return true;
+            }
+
+            // Check if scroll buttons were touched
+            if (isScrollLeftButtonTouched(touchX, touchY)) {
+                Log.d("BoardGame", "Scroll left button touched");
+                scrollOffset = Math.max(0, scrollOffset - 280);
+                invalidate();
+                return true;
+            } else if (isScrollRightButtonTouched(touchX, touchY)) {
+                Log.d("BoardGame", "Scroll right button touched");
+                if (canScrollRight) {
+                    scrollOffset += 280;
+                    invalidate();
+                }
+                return true;
+            }
+
+            // Only handle card/packet touches if it's the player's turn
+            if (isMyTurn) {
+                Log.d("BoardGame", "It's my turn, checking touches");
+
+                // Check if packet was touched
+                if (isPacketTouched(touchX, touchY)) {
+                    Log.d("BoardGame", "Packet touched");
+                    handlePacketTouch();
+                    return true;
+                }
+
+                // Check if any card was touched
+                for (Card card : myCards) {
+                    // Adjust touch X coordinate for scrolling
+                    if (card.isUserTouchMe((int) touchX + scrollOffset, (int) touchY)) {
+                        Log.d("BoardGame", "Card touched: " + card.getCatagory() + " - " + card.getCardName());
+
+                        // Use the new direct card touch method instead of the old one
+                        directCardTouch(card);
+                        return true;
+                    }
+                }
+            } else {
+                Log.d("BoardGame", "Not my turn, ignoring touches");
+            }
+        }
+        return super.onTouchEvent(event);
+    }
     private boolean isScrollLeftButtonTouched(float x, float y) { // פונקציה שבודקת אם המגע היה על כפתור גלילה שמאלה
         return canScrollLeft && x >= 20 && x <= 20 + SCROLL_BUTTON_WIDTH && // בדיקה אם ניתן לגלול שמאלה והמגע היה בתחום ה-X של הכפתור
                 y >= getHeight() - 450 - SCROLL_BUTTON_HEIGHT / 2 && y <= getHeight() - 450 + SCROLL_BUTTON_HEIGHT / 2; // בדיקה אם המגע היה בתחום ה-Y של הכפתור
@@ -167,27 +280,7 @@ public class BoardGame extends View { // הגדרת המחלקה BoardGame שי�
         }
     }
 
-    private void handleCardTouch(Card card) { // פונקציה שמטפלת במגע על קלף
-        // הסרת הקלף מהיד של השחקן הנוכחי
-        myCards.remove(card); // הסרת הקלף מהמערך של השחקן הנוכחי
 
-        // עדכון קלפי השחקן הנוכחי ב-Firebase
-        if (isPlayer1) { // בדיקה אם זה שחקן 1
-            fbModule.updatePlayer1Cards(myCards); // עדכון קלפי שחקן 1 ב-Firebase
-            // הוספת הקלף ליד של היריב
-            fbModule.moveCardToPlayer("player2", card); // העברת הקלף לשחקן 2
-        } else { // אם זה שחקן 2
-            fbModule.updatePlayer2Cards(myCards); // עדכון קלפי שחקן 2 ב-Firebase
-            // הוספת הקלף ליד של היריב
-            fbModule.moveCardToPlayer("player1", card); // העברת הקלף לשחקן 1
-        }
-
-        // החלפת תור
-        fbModule.switchTurn(); // החלפת התור ב-Firebase
-
-        // רענון המסך
-        invalidate(); // גורם לציור מחדש של התצוגה
-    }
     private void initializeGame() {
         try {
             deck = new Deck(); // יצירת מופע חדש של החפיסה
@@ -227,6 +320,14 @@ public class BoardGame extends View { // הגדרת המחלקה BoardGame שי�
             Log.e("BoardGame", "שגיאה באתחול המשחק: " + e.getMessage());
         }
         invalidate(); // גורם לציור מחדש של התצוגה
+        if (fbModule != null) {
+            fbModule.debugCardStates();
+
+            // Ensure turn is set properly
+            if (isPlayer1) {
+                fbModule.gameStateRef.child("currentTurn").setValue("player1");
+            }
+        }
     }
 
     // הוספת פונקציה להגדרת צבע הרקע
@@ -634,5 +735,11 @@ public class BoardGame extends View { // הגדרת המחלקה BoardGame שי�
             // עדכון ממשק המשתמש
             invalidate(); // גורם לציור מחדש של התצוגה
         }
+    }
+    private boolean areCardsEqual(Card card1, Card card2) {
+        boolean result = card1.equals(card2);
+        Log.d("BoardGame", "Card comparison: " + card1.getCatagory() + ":" + card1.getCardName() +
+                " vs " + card2.getCatagory() + ":" + card2.getCardName() + " = " + result);
+        return result;
     }
 }

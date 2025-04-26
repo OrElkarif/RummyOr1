@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "939198887331",
+    "firebase_url": "https://orproject-e7ff0-default-rtdb.firebaseio.com",
+    "project_id": "orproject-e7ff0",
+    "storage_bucket": "orproject-e7ff0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:939198887331:android:61ff8a41b92f8348d6d616",
+        "android_client_info": {
+          "package_name": "com.example.orproject"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "939198887331-6vo24mjbm85imnfia0euarpv678qre07.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBClZYpTGbN_SHmPRGZ6RzRJNFf19oRbAU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "939198887331-6vo24mjbm85imnfia0euarpv678qre07.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

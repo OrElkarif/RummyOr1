@@ -15,17 +15,20 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private Button btnStartGame, btnSetting, btnInstruction, btnAchivevements;
+    private Button btnStartGame, btnSetting, btnInstruction, btnAchievements, btnLogout;
     private String backgroundColor = "Blue";
     private ActivityResultLauncher<Intent> activityResultLauncher;
 
     private LinearLayout linearLayout;
     private DatabaseReference gameStateRef;
+    private FirebaseAuth mAuth;
 
     private static MainActivity instance;
 
@@ -35,13 +38,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
         instance = this;
 
+        // Initialize Firebase Auth
+        mAuth = FirebaseAuth.getInstance();
+
         try {
-            // יצירת גישה ישירה ל-Firebase
+            // Create direct access to Firebase
             gameStateRef = FirebaseDatabase.getInstance().getReference("gameState");
 
             init();
 
-            // בדיקה אם יש צבע שמור ב-Firebase
+            // Check if there's a saved color in Firebase
             gameStateRef.child("backgroundColor").get().addOnSuccessListener(snapshot -> {
                 String color = snapshot.getValue(String.class);
                 if (color != null) {
@@ -51,6 +57,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             });
         } catch (Exception e) {
             Log.e("MainActivity", "Error initializing: " + e.getMessage());
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        // Check if user is signed in
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) {
+            // No user is signed in, redirect to login
+            startActivity(new Intent(MainActivity.this, LoginActivity.class));
+            finish();
         }
     }
 
@@ -70,8 +88,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             btnSetting.setOnClickListener(this);
             btnInstruction = findViewById(R.id.btnInstruction);
             btnInstruction.setOnClickListener(this);
-            btnAchivevements = findViewById(R.id.btnAchievements);
-            btnAchivevements.setOnClickListener(this);
+            btnAchievements = findViewById(R.id.btnAchievements);
+            btnAchievements.setOnClickListener(this);
+            btnLogout = findViewById(R.id.btnLogout);
+            btnLogout.setOnClickListener(this);
 
             linearLayout = findViewById(R.id.MainActivity);
 
@@ -106,18 +126,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Intent intent = new Intent(this, PreGameActivity.class);
                 startActivity(intent);
             }
-            if (v == btnSetting) {
+            else if (v == btnSetting) {
                 Intent i = new Intent(this, SettingActivity.class);
                 i.putExtra("currentColor", backgroundColor); // Pass the current color
                 activityResultLauncher.launch(i);
             }
-            if (v == btnInstruction) {
+            else if (v == btnInstruction) {
                 Intent intent = new Intent(this, InstructionActivity.class);
                 startActivity(intent);
             }
-            if (v == btnAchivevements) {
+            else if (v == btnAchievements) {
                 Intent intent = new Intent(this, AchievementsActivity.class);
                 startActivity(intent);
+            }
+            else if (v == btnLogout) {
+                // Sign out the user
+                mAuth.signOut();
+                // Redirect to login screen
+                startActivity(new Intent(MainActivity.this, LoginActivity.class));
+                finish();
             }
         } catch (Exception e) {
             Log.e("MainActivity", "Error in onClick: " + e.getMessage());

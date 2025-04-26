@@ -5,55 +5,66 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:padding="16dp"
     tools:context=".AchievementsActivity">
 
-    
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Satistics:"
-        android:textSize="70dp">
-    </TextView>
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Amount of Rummies completed"
-        android:textSize="50dp"></TextView>
+        android:text="Statistics"
+        android:textSize="40sp"
+        android:textStyle="bold"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="30dp" />
 
     <TextView
-        android:layout_width="wrap_content"
+        android:id="@+id/tvRummiesCompleted"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Amount of turns:"
-        android:textSize="50dp"></TextView>
+        android:text="Amount of Rummies completed: 0"
+        android:textSize="25sp"
+        android:layout_marginBottom="20dp" />
+
     <TextView
-        android:layout_width="wrap_content"
+        android:id="@+id/tvGamesPlayed"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Score:"
-        android:textSize="50dp"></TextView>
+        android:text="Amount of turns: 0"
+        android:textSize="25sp"
+        android:layout_marginBottom="20dp" />
+
+    <TextView
+        android:id="@+id/tvTotalScore"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Score: 0"
+        android:textSize="25sp"
+        android:layout_marginBottom="50dp" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Play Again?"
-        android:layout_marginTop="100dp"
-        android:textSize="90dp"></TextView>
-
+        android:layout_gravity="center_horizontal"
+        android:textSize="40sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="30dp" />
 
     <RadioGroup
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="left"
+        android:layout_gravity="start"
         android:layoutDirection="ltr"
-        android:layout_marginTop="50dp"
-        >
-    <RadioButton
-        android:layout_width="300dp"
-        android:layout_height="wrap_content"
-        android:text="Yes"
-        android:textSize="70dp"
-        android:id="@+id/radioButtonYes"
-        android:textColor="@color/black"
-        android:checked="true"></RadioButton>
+        android:layout_marginBottom="30dp">
+
+        <RadioButton
+            android:id="@+id/radioButtonYes"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:text="Yes"
+            android:textSize="30sp"
+            android:textColor="@color/black"
+            android:checked="true" />
 
         <RadioButton
             android:id="@+id/radioButtonNo"
@@ -61,14 +72,17 @@
             android:layout_height="wrap_content"
             android:text="No"
             android:textColor="@color/black"
-            android:textSize="70dp"></RadioButton>
+            android:textSize="30sp" />
 
     </RadioGroup>
+
     <Button
+        android:id="@+id/btnAction"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Press"
-        android:textSize="80dp"
-        android:backgroundTint="#DFD620"></Button>
+        android:text="Confirm"
+        android:textSize="30sp"
+        android:layout_gravity="center_horizontal"
+        android:backgroundTint="#DFD620" />
 
 </LinearLayout>

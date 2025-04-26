@@ -1,50 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+    package="com.example.orproject">
 
     <application
         android:allowBackup="true"
-        android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.OrProject"
-        tools:targetApi="31">
+        android:theme="@style/Theme.OrProject">
+
+        <!-- LoginActivity - המסך הראשון שייפתח -->
         <activity
-            android:name=".CustomDialog"
-            android:exported="false" />
-        <activity
-            android:name=".Player2Activity"
-            android:exported="false" />
-        <activity
-            android:name=".Player1Activity"
-            android:exported="false" />
-        <activity
-            android:name=".InstructionActivity"
-            android:exported="false" />
-        <activity
-            android:name=".AchievementsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".PreGameActivity"
-            android:exported="false" />
-        <activity
-            android:name=".SettingActivity"
-            android:exported="false" />
-        <activity
-            android:name=".GameActivity"
-            android:exported="false" />
-        <activity
-            android:name=".MainActivity"
+            android:name=".LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- MainActivity - כבר לא המסך הראשון -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+        </activity>
+
+        <!-- שאר ה-activities הקיימים -->
+        <activity
+            android:name=".CustomDialog"
+            android:exported="false" />
+
+        <activity
+            android:name=".Player2Activity"
+            android:exported="false" />
+
+        <activity
+            android:name=".Player1Activity"
+            android:exported="false" />
+
+        <activity
+            android:name=".AchievementsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".PreGameActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".SettingActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".InstructionActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".GameActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

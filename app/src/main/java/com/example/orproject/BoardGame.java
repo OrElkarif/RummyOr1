@@ -202,7 +202,7 @@ public class BoardGame extends View { // הגדרת המחלקה BoardGame שי�
                 return true;
             }
 
-            // Only handle card/packet touches if it's the player's turn
+
             if (isMyTurn) {
                 Log.d("BoardGame", "It's my turn, checking touches");
 

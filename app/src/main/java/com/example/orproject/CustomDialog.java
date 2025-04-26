@@ -40,7 +40,7 @@ public class CustomDialog {
                 dialog.dismiss(); // סגירת הדיאלוג
 
                 // חזרה לתפריט הראשי
-                Intent intent = new Intent(context, MainActivity.class); // יצירת כוונה (Intent) לפתיחת המסך הראשי
+                Intent intent = new Intent(context, AchievementsActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP); // הגדרת דגל לניקוי כל המסכים הקודמים במחסנית
                 context.startActivity(intent); // הפעלת האקטיביטי החדשה
 

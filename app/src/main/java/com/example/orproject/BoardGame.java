@@ -369,7 +369,7 @@ public class BoardGame extends View { // הגדרת המחלקה BoardGame שי�
             textPaint.setColor(Color.RED); // הגדרת צבע הטקסט לאדום
             textPaint.setTextSize(60); // הגדרת גודל הטקסט ל-60
             textPaint.setTextAlign(Paint.Align.CENTER); // הגדרת יישור הטקסט למרכז
-            canvas.drawText("Your Turn To Ask!", getWidth() / 2, 200, textPaint); // ציור הטקסט במרכז המסך
+            canvas.drawText("Your Turn To Be Asked!", getWidth() / 2, 200, textPaint); // ציור הטקסט במרכז המסך
         }
 
         // בדיקת סיום משחק
